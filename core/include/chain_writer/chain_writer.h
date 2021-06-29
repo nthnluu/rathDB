@@ -25,6 +25,7 @@ private:
 
     /// Default file extension: used for both Undo and Block files
     static const std::string _file_extension;
+    static const std::string _data_directory;
 
     /// Default filename that block data is stored to.
     static const std::string _block_filename;
@@ -48,6 +49,13 @@ private:
     static const uint16_t _max_undo_file_size;
 public:
     ChainWriter();
+    
+    static std::string get_data_directory() {return _data_directory;}
+    static std::string get_file_extension() {return _file_extension;}
+    static std::string get_block_filename() {return _block_filename;}
+    static std::string get_undo_filename() {return _undo_filename;}
+    static uint16_t get_max_block_file_size() {return _max_block_file_size;}
+    static uint16_t get_max_undo_file_size() {return _max_undo_file_size;}
 
     /// stores a block's info and its undo block info
     std::unique_ptr<BlockRecord> store_block(const Block& block, uint32_t height);
