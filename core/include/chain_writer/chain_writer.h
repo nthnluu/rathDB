@@ -32,7 +32,7 @@ private:
     uint16_t _current_block_file_number;
     /// Current offset into the current file to write data to.
     uint16_t _current_block_offset;
-    /// Defaul maximum size (in bytes) a file containing block data can be.
+    /// Default maximum size (in bytes) a file containing block data can be.
     static const uint16_t _max_block_file_size;
 
     // The second section of private members holds information
