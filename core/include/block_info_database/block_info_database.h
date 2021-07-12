@@ -25,7 +25,7 @@ public:
     /// Writes a key (hash) value (record) pair to the database.
     void store_block_record(uint32_t hash, const BlockRecord& record);
     /// Gets a value (block record) based on a key (block hash).
-    std::unique_ptr<BlockRecord> get_block_record(uint32_t block_hash);
+    std::tuple<bool, std::unique_ptr<BlockRecord>> get_block_record(uint32_t block_hash);
 
     // Copy constructor and copy assignment operator deleted.
     BlockInfoDatabase(BlockInfoDatabase&& other) = delete;

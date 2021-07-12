@@ -6,5 +6,10 @@
  * This software was developed by Colby Anderson (HTA)
  * and Parker Ljung (TA) of csci1951L in Summer of 2021.
  */
+#include "gtest/gtest.h"
+#include "chain_writer.h"
 
-
+TEST(testChainWriter, testWriteFile) {
+    ChainWriter chainWriter = ChainWriter();
+    chainWriter.write_block("hello");
+}
