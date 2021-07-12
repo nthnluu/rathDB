@@ -108,3 +108,24 @@ std::string ChainWriter::read_block(const FileInfo& block_location) {
 
     return std::string(buffer);
 }
+
+std::string ChainWriter::read_undo_block(const FileInfo &undo_block_location) {
+    int numElements = undo_block_location.end - undo_block_location.start;
+
+    // open the file
+    FILE *currentFile = fopen(undo_block_location.file_name.c_str(), "r");
+
+    // create buffer to store read values
+    char buffer[numElements];
+
+    // adjust offset in current file
+    fseek(currentFile, undo_block_location.start, SEEK_SET);
+
+    // read data from file
+    fread(buffer, sizeof(char), numElements, currentFile);
+
+    // close the file
+    fclose(currentFile);
+
+    return std::string(buffer);
+}
