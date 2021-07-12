@@ -61,3 +61,50 @@ std::unique_ptr<FileInfo> ChainWriter::write_block(std::string serialized_block)
     // Close the file
     fclose(currentFile);
 }
+
+std::unique_ptr<FileInfo> ChainWriter::write_undo_block(std::string serialized_block) {
+    FILE *currentFile;
+
+    // Check if the undo block will fit in the current file
+    if (_current_undo_offset + serialized_block.size() > _max_undo_file_size) {
+        _current_undo_file_number = _current_undo_file_number + 1;
+        _current_undo_offset = 0;
+    }
+
+    std::string currentFilePath =
+            _data_directory + "/" + _undo_filename + "_" + std::to_string(_current_undo_file_number) + "." +
+            _file_extension;
+
+    // open the file
+    currentFile = fopen(currentFilePath.c_str(), "r");
+
+    // write the undo block to the file
+    fprintf(currentFile, "%s", serialized_block.c_str());
+
+    // update current offsets accordingly
+    _current_undo_offset = _current_undo_offset + serialized_block.size() + 1;
+
+    // Close the file
+    fclose(currentFile);
+}
+
+std::string ChainWriter::read_block(const FileInfo& block_location) {
+    int numElements = block_location.end - block_location.start;
+
+    // open the file
+    FILE *currentFile = fopen(block_location.file_name.c_str(), "r");
+
+    // create buffer to store read values
+    char buffer[numElements];
+
+    // adjust offset in current file
+    fseek(currentFile, block_location.start, SEEK_SET);
+
+    // read data from file
+    fread(buffer, sizeof(char), numElements, currentFile);
+
+    // close the file
+    fclose(currentFile);
+
+    return std::string(buffer);
+}
