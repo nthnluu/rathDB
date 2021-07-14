@@ -49,6 +49,12 @@ private:
     /// gets all undo blocks on main chain to a specific height
     std::vector<std::unique_ptr<UndoBlock>> get_undo_blocks_queue(uint32_t branching_height);
 
+    /// tracks the most recent block hashes
+    std::deque<uint32_t> _recent_block_hashes;
+
+    /// updates vector of most recent hashes
+    void update_recent_hashes(Block& block);
+
 public:
     // The first section of public functions constructs a Chain.
 
