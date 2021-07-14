@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "chain_writer.h"
 
+
 TEST(testChainWriter, testWriteFile) {
     ChainWriter chainWriter = ChainWriter();
     chainWriter.write_block("hello");

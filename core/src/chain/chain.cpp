@@ -2,20 +2,39 @@
 #include <rathcrypto.h>
 
 // TODO: Implement
-UndoBlock make_undo_block(std::unique_ptr<Block> block) {}
+std::unique_ptr<UndoBlock> make_undo_block(Block& block) {
+
+    // Get transaction hashes from block
+    std::vector<uint32_t> transaction_hashes;
+    std::vector<std::unique_ptr<UndoCoinRecord>> undo_coin_records;
+    for (auto& transaction : block.transactions) {
+        transaction_hashes.push_back(RathCrypto::hash(Transaction::serialize(*transaction)));
+        undo_coin_records.push_back(std::make_unique<UndoCoinRecord>(transaction->version, ))
+    }
+
+    // Create undo coin records
+
+//    UndoCoinRecord(uint8_t version_,
+//            std::vector<uint32_t> utxo_, std::vector<uint32_t> amounts_,
+//            std::vector<uint32_t> public_keys_);
+
+
+
+    return std::make_unique<UndoBlock>(transaction_hashes, )
+}
 
 Chain::Chain() {
     _active_chain_length = 1;
     _active_chain_last_block = construct_genesis_block();
-    _block_info_database;
-    _coin_database;
-    _chain_writer;
+    _block_info_database = std::make_unique<BlockInfoDatabase>();
+    _coin_database = std::make_unique<CoinDatabase>();
+    _chain_writer = std::make_unique<ChainWriter>();
 
-    UndoBlock genesis_undo_block = make_undo_block(_active_chain_last_block);
+    std::unique_ptr<UndoBlock> genesis_undo_block = make_undo_block(*_active_chain_last_block);
 
     // Write undo block to disk
     std::unique_ptr<FileInfo> undoBlockFileInfo = _chain_writer->write_undo_block(
-            UndoBlock::serialize(genesis_undo_block));
+            UndoBlock::serialize(*genesis_undo_block));
 
     // Write the genesis block to disk
     std::unique_ptr<FileInfo> genesisBlockFileInfo = _chain_writer->write_block(
