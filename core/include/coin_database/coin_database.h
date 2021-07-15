@@ -56,13 +56,13 @@ public:
 
     bool validate_block(const std::vector<std::unique_ptr<Transaction>>& transactions);
     bool validate_transaction(const Transaction& transaction);
-    void store_block(std::vector<std::unique_ptr<Transaction>> transactions);
+    void store_block(const std::vector<std::unique_ptr<Transaction>>& transactions);
     void store_transaction(std::unique_ptr<Transaction> transaction);
     bool validate_and_store_block(std::vector<std::unique_ptr<Transaction>> transactions);
     bool validate_and_store_transaction(std::unique_ptr<Transaction> transaction);
 
     void remove_transactions_from_mempool(const std::vector<std::unique_ptr<Transaction>>& transactions);
-    void store_transactions_to_main_cache(std::vector<std::unique_ptr<Transaction>> transactions);
+    void store_transactions_to_main_cache(const std::vector<std::unique_ptr<Transaction>>& transactions);
     void store_transaction_in_mempool(std::unique_ptr<Transaction> transaction);
 
     void undo_coins(std::vector<std::unique_ptr<UndoBlock>> undo_blocks);

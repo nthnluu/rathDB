@@ -61,9 +61,9 @@ public:
     // TODO: Remove undo block from function signature
     std::unique_ptr<BlockRecord> store_block(const Block& block, uint32_t height, const UndoBlock& undoBlock);
     /// writes a serialized block to disk.
-    std::unique_ptr<FileInfo> write_block(std::string serialized_block);
+    std::unique_ptr<FileInfo> write_block(const std::string& serialized_block);
     /// writes a serialized undo block to disk.
-    std::unique_ptr<FileInfo> write_undo_block(std::string serialized_block);
+    std::unique_ptr<FileInfo> write_undo_block(const std::string& serialized_block);
     /// reads a serialized block from disk.
     std::string read_block(const FileInfo& block_location);
     /// reads a serialized undo block from disk.

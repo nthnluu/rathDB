@@ -55,6 +55,12 @@ private:
     /// updates vector of most recent hashes
     void update_recent_hashes(Block& block);
 
+    /// Helper function for getting a block from a BlockRecord
+    std::unique_ptr<Block> block_record_to_block(BlockRecord &block_record);
+
+    /// Helper function for building an undo block for a given block
+    std::unique_ptr<UndoBlock> make_undo_block(Block &block);
+
 public:
     // The first section of public functions constructs a Chain.
 
