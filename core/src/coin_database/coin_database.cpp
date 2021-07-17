@@ -45,7 +45,7 @@ CoinDatabase::CoinDatabase()
 
 // TODO: Test implementation
 bool CoinDatabase::validate_block(const std::vector<std::unique_ptr<Transaction>> &transactions) {
-    for (auto& transaction : transactions) {
+    for (auto &transaction : transactions) {
         if (!validate_transaction(*transaction)) {
             return false;
         }
@@ -53,17 +53,16 @@ bool CoinDatabase::validate_block(const std::vector<std::unique_ptr<Transaction>
     return true;
 }
 
-// TODO: Implement
+// TODO: Test implementation
 bool CoinDatabase::validate_transaction(const Transaction &transaction) {
     for (auto &transaction_input : transaction.transaction_inputs) {
         // Make a coin locator for transaction input
         CoinLocator coin_locator = CoinLocator(transaction_input->reference_transaction_hash,
                                                transaction_input->utxo_index);
-
         // Check main cache for coin
-        if (_main_cache.find(CoinLocator::serialize(coin_locator)) != _main_cache.end()) {
+        if (_main_cache.find(std::to_string(transaction_input->reference_transaction_hash)) != _main_cache.end()) {
             // Coin found
-            Coin& coin = *_main_cache.find(CoinLocator::serialize(coin_locator))->second;
+            Coin &coin = *_main_cache.find(std::to_string(transaction_input->reference_transaction_hash))->second;
             return !coin.is_spent;
         } else {
             // Coin not found in main cache... check underlying database
@@ -72,14 +71,14 @@ bool CoinDatabase::validate_transaction(const Transaction &transaction) {
             if (!res.empty()) {
                 // found in underlying database
                 std::unique_ptr<CoinRecord> coin_record = CoinRecord::deserialize(res);
-                return true;
+                return std::find(coin_record->utxo.begin(), coin_record->utxo.end(), transaction_input->utxo_index) !=
+                       coin_record->utxo.end();
             } else {
                 // not found in underlying database
                 return false;
             }
         }
     }
-
     return false;
 }
 
@@ -125,11 +124,12 @@ void CoinDatabase::remove_transactions_from_mempool(const std::vector<std::uniqu
 }
 
 // TODO: Implement
-void CoinDatabase::store_transactions_to_main_cache(const std::vector<std::unique_ptr<Transaction>>& transactions) {
+void CoinDatabase::store_transactions_to_main_cache(const std::vector<std::unique_ptr<Transaction>> &transactions) {
     for (auto &transaction : transactions) {
         std::vector<uint32_t> utxo;
         std::vector<uint32_t> amounts;
         std::vector<uint32_t> public_keys;
+        std::vector<std::unique_ptr<Coin>> coins;
 
         for (auto &transaction_input : transaction->transaction_inputs) {
             // remove spent TXO from main cache
@@ -150,9 +150,16 @@ void CoinDatabase::store_transactions_to_main_cache(const std::vector<std::uniqu
             utxo.push_back(transaction_output->amount);
             amounts.push_back(transaction_output->amount);
             public_keys.push_back(transaction_output->public_key);
+            std::unique_ptr<TransactionOutput> output = std::make_unique<TransactionOutput>(transaction_output->amount,
+                                                                                            transaction_output->public_key);
+            coins.push_back(std::make_unique<Coin>(std::move(output), false));
         }
 
         CoinRecord coin_record = CoinRecord(transaction->version, utxo, amounts, public_keys);
+        for (auto &coin : coins) {
+            _main_cache.insert(
+                    {std::to_string(RathCrypto::hash(Transaction::serialize(*transaction))), std::move(coin)});
+        }
     }
 }
 
@@ -173,7 +180,30 @@ void CoinDatabase::flush_main_cache() {
     }
 }
 
-void CoinDatabase::undo_coins(std::vector<std::unique_ptr<UndoBlock>> undo_blocks) {}
+
+std::tuple<uint32_t, uint32_t> CoinDatabase::get_coin_info(CoinLocator &coin_locator) {
+    if (_main_cache.find(CoinLocator::serialize(coin_locator)) != _main_cache.end()) {
+        // found in main cache
+        Coin &coin = *_main_cache.find(CoinLocator::serialize(coin_locator))->second;
+        return std::make_tuple(coin.transaction_output->amount, coin.transaction_output->public_key);
+    } else {
+        std::unique_ptr<CoinRecord> coin_record = CoinRecord::deserialize(
+                _database->get_safely(std::to_string(coin_locator.transaction_hash)));
+        auto it = find(coin_record->utxo.begin(), coin_record->utxo.end(), coin_locator.output_index);
+
+        if (it != coin_record->utxo.end()) {
+            int index = it - coin_record->utxo.end();
+            return std::make_tuple(coin_record->amounts[index], coin_record->public_keys[index]);
+        }
+    }
+}
+
+void CoinDatabase::undo_coins(std::vector<std::unique_ptr<UndoBlock>> undo_blocks) {
+    for (auto &undo_block : undo_blocks) {
+        for (auto &undo_coin_record : undo_block->undo_coin_records) {
+        }
+    }
+}
 
 
 

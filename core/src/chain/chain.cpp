@@ -19,10 +19,11 @@ std::unique_ptr<UndoBlock> Chain::make_undo_block(Block &block) {
         for (auto &transaction_input : transaction->transaction_inputs) {
             CoinLocator coin_locator = CoinLocator(transaction_input->reference_transaction_hash,
                                                    transaction_input->utxo_index);
-        }
+            std::tuple<uint32_t, uint32_t> coin_info = _coin_database->get_coin_info(coin_locator);
 
-        for (auto &transaction_output : transaction->transaction_outputs) {
-
+            utxo.push_back(transaction_input->utxo_index);
+            amounts.push_back(get<0>(coin_info));
+            public_keys.push_back(get<1>(coin_info));
         }
 
         std::unique_ptr<UndoCoinRecord> undo_coin_record = std::make_unique<UndoCoinRecord>(transaction->version,
@@ -74,6 +75,8 @@ Chain::Chain() : _active_chain_length(1), _active_chain_last_block(construct_gen
     // Store genesis block record in block info database
     _block_info_database->store_block_record(hash_block(*_active_chain_last_block), *genesis_block_record);
 
+    _coin_database->store_block(get_last_block()->transactions);
+
     // Add genesis block to recent block hashes
     update_recent_hashes(*_active_chain_last_block);
 }
@@ -85,8 +88,29 @@ void Chain::handle_block(std::unique_ptr<Block> block) {
             hash_block(*_active_chain_last_block) == block->block_header->previous_block_hash;
 
     if (appended_on_main_chain) {
+        std::vector<std::unique_ptr<Transaction>> transactions;
+        for (auto &transaction : block->transactions) {
+            std::vector<std::unique_ptr<TransactionInput>> transaction_inputs;
+            std::vector<std::unique_ptr<TransactionOutput>> transaction_outputs;
+
+            for (auto &input : transaction->transaction_inputs) {
+                transaction_inputs.push_back(
+                        std::make_unique<TransactionInput>(input->reference_transaction_hash, input->utxo_index,
+                                                           input->signature));
+            }
+
+            for (auto &output : transaction->transaction_outputs) {
+                transaction_outputs.push_back(
+                        std::make_unique<TransactionOutput>(output->amount, output->public_key));
+            }
+
+            transactions.push_back(
+                    std::make_unique<Transaction>(std::move(transaction_inputs), std::move(transaction_outputs),
+                                                  transaction->version, transaction->lock_time));
+        }
+
         // update UTXO and mempool
-        _coin_database->validate_and_store_block(std::move(block->transactions));
+        _coin_database->validate_and_store_block(std::move(transactions));
     }
 
     if (_coin_database->validate_block(block->transactions)) {
@@ -247,7 +271,7 @@ std::unique_ptr<Block> Chain::get_last_block() {
 
 // TODO: Test implementation
 uint32_t Chain::get_last_block_hash() {
-    return hash_block(*_active_chain_last_block);
+    return hash_block(*get_last_block());
 }
 
 // TODO: Test implementation

@@ -1,5 +1,5 @@
 #include <chain_writer.h>
-#include <stdio.h>
+#include <filesystem>
 
 const std::string ChainWriter::_file_extension = "data";
 const std::string ChainWriter::_block_filename = "blocks";
@@ -7,7 +7,6 @@ const uint16_t ChainWriter::_max_block_file_size = 1000;
 const std::string ChainWriter::_undo_filename = "undo_blocks";
 const uint16_t ChainWriter::_max_undo_file_size = 1000;
 const std::string ChainWriter::_data_directory = "data";
-//const std::string ChainWriter::_data_directory = "/Users/nathanluu/CLionProjects/rathDB_stencil/data";
 
 
 ChainWriter::ChainWriter() : _current_block_file_number(0), _current_block_offset(0), _current_undo_file_number(0),
@@ -35,7 +34,7 @@ std::unique_ptr<BlockRecord> ChainWriter::store_block(const Block &block, uint32
 
 // TODO: Test implementation
 std::unique_ptr<FileInfo> ChainWriter::write_block(const std::string &serialized_block) {
-    FILE* current_file;
+    FILE *current_file;
 
     // Check if the block will fit in the current file
     // Move onto next file if not...
@@ -50,13 +49,20 @@ std::unique_ptr<FileInfo> ChainWriter::write_block(const std::string &serialized
 
     // open the file in append mode
     current_file = fopen(current_file_path.c_str(), "a");
+
+    // Create directory if it doesn't exist
+    if (!current_file) {
+        // create directory
+        std::filesystem::create_directory(ChainWriter::get_data_directory());
+        current_file = fopen(current_file_path.c_str(), "a");
+    }
+
     // write the block to the file
     fprintf(current_file, "%s", serialized_block.c_str());
 
     // update current offsets accordingly
     uint16_t block_length = serialized_block.length();
-    std::cerr << block_length;
-    _current_block_offset = _current_block_offset + block_length + 1;
+    _current_block_offset = _current_block_offset + block_length;
 
 
 
@@ -86,6 +92,13 @@ std::unique_ptr<FileInfo> ChainWriter::write_undo_block(const std::string &seria
     // open the file
     current_file = fopen(current_file_path.c_str(), "a");
 
+    // Create directory if it doesn't exist
+    if (!current_file) {
+        // create directory
+        std::filesystem::create_directory(ChainWriter::get_data_directory());
+        current_file = fopen(current_file_path.c_str(), "a");
+    }
+
     // write the undo block to the file
     fprintf(current_file, "%s", serialized_block.c_str());
 
@@ -94,7 +107,6 @@ std::unique_ptr<FileInfo> ChainWriter::write_undo_block(const std::string &seria
 
     // Close the file
     fclose(current_file);
-
 
 
     return std::make_unique<FileInfo>(_undo_filename + "_" + std::to_string(_current_undo_file_number) + "." +
@@ -107,7 +119,7 @@ std::string ChainWriter::read_block(const FileInfo &block_location) {
     int num_elements = block_location.end - block_location.start;
 
     // open the file
-    FILE *current_file = fopen(block_location.file_name.c_str(), "r");
+    FILE *current_file = fopen((_data_directory + "/" + block_location.file_name).c_str(), "r");
 
     // create buffer to store read values
     char buffer[num_elements];

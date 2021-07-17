@@ -12,5 +12,13 @@
 
 TEST(testChainWriter, testWriteFile) {
     ChainWriter chainWriter = ChainWriter();
-    chainWriter.write_block("hello");
+    std::unique_ptr<FileInfo> file_info = chainWriter.write_block("hello");
+    std::basic_string<char, std::char_traits<char>, std::allocator<char>> res = chainWriter.read_block(*file_info);
+    EXPECT_EQ(res, "hello");
+
+    std::unique_ptr<FileInfo> file_info1 = chainWriter.write_block("block_sample_2");
+    std::basic_string<char, std::char_traits<char>, std::allocator<char>> res1 = chainWriter.read_block(*file_info1);
+    EXPECT_EQ(res1, "block_sample_2");
+
+
 }
